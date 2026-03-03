@@ -8,21 +8,26 @@ import '../models/food_item.dart';
 
 class FoodService {
   final String _model = 'gemini-1.5-pro';
+  bool _isInitialized = false;
 
   // Load the API key from the environment
   String get _apiKey => dotenv.env['GOOGLE_AI_API_KEY'] ?? '';
 
   // Initialize Gemini in the constructor
   FoodService() {
-    if (_apiKey.isEmpty) {
-      throw Exception('Google AI API key not found in environment variables');
+    if (_apiKey.isNotEmpty) {
+      Gemini.init(apiKey: _apiKey);
+      _isInitialized = true;
+    } else {
+      print('Warning: Google AI API key not found. Food scanning will not work.');
     }
-
-    // Initialize the Gemini instance
-    Gemini.init(apiKey: _apiKey);
   }
 Future<Either<String, FoodItem>> detectFoodAndCalories(File imageFile) async {
   try {
+    if (!_isInitialized) {
+      return Left('API key not configured. Please add your GOOGLE_AI_API_KEY to the .env file.');
+    }
+
     if (!imageFile.existsSync()) {
       return Left('File not found: ${imageFile.path}');
     }
